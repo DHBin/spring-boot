@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2019 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,9 +22,11 @@ import java.util.Map;
 
 import org.springframework.boot.actuate.autoconfigure.metrics.export.properties.StepRegistryProperties;
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
 
 /**
- * {@link ConfigurationProperties} for configuring Humio metrics export.
+ * {@link ConfigurationProperties @ConfigurationProperties} for configuring Humio metrics
+ * export.
  *
  * @author Andy Wilkinson
  * @since 2.1.0
@@ -45,7 +47,7 @@ public class HumioProperties extends StepRegistryProperties {
 	/**
 	 * Name of the repository to publish metrics to.
 	 */
-	private String repository = "sandbox";
+	private String repository = "";
 
 	/**
 	 * Humio tags describing the data source in which metrics will be stored. Humio tags
@@ -78,10 +80,13 @@ public class HumioProperties extends StepRegistryProperties {
 		this.connectTimeout = connectTimeout;
 	}
 
+	@Deprecated
+	@DeprecatedConfigurationProperty(reason = "No longer used as repository is resolved from the api token.")
 	public String getRepository() {
 		return this.repository;
 	}
 
+	@Deprecated
 	public void setRepository(String repository) {
 		this.repository = repository;
 	}

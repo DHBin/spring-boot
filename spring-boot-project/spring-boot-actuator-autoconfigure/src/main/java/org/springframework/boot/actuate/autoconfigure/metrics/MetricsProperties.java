@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,12 +20,15 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
+import org.springframework.boot.context.properties.NestedConfigurationProperty;
 
 /**
- * {@link ConfigurationProperties} for configuring Micrometer-based metrics.
+ * {@link ConfigurationProperties @ConfigurationProperties} for configuring
+ * Micrometer-based metrics.
  *
  * @author Jon Schneider
  * @author Alexander Abramov
+ * @author Tadaya Tsuyukubo
  * @since 2.0.0
  */
 @ConfigurationProperties("management.metrics")
@@ -93,10 +96,7 @@ public class MetricsProperties {
 
 		public static class Client {
 
-			/**
-			 * Name of the metric for sent requests.
-			 */
-			private String requestsMetricName = "http.client.requests";
+			private final ClientRequest request = new ClientRequest();
 
 			/**
 			 * Maximum number of unique URI tag values allowed. After the max number of
@@ -105,12 +105,8 @@ public class MetricsProperties {
 			 */
 			private int maxUriTags = 100;
 
-			public String getRequestsMetricName() {
-				return this.requestsMetricName;
-			}
-
-			public void setRequestsMetricName(String requestsMetricName) {
-				this.requestsMetricName = requestsMetricName;
+			public ClientRequest getRequest() {
+				return this.request;
 			}
 
 			public int getMaxUriTags() {
@@ -119,24 +115,40 @@ public class MetricsProperties {
 
 			public void setMaxUriTags(int maxUriTags) {
 				this.maxUriTags = maxUriTags;
+			}
+
+			public static class ClientRequest {
+
+				/**
+				 * Name of the metric for sent requests.
+				 */
+				private String metricName = "http.client.requests";
+
+				/**
+				 * Auto-timed request settings.
+				 */
+				@NestedConfigurationProperty
+				private final AutoTimeProperties autotime = new AutoTimeProperties();
+
+				public AutoTimeProperties getAutotime() {
+					return this.autotime;
+				}
+
+				public String getMetricName() {
+					return this.metricName;
+				}
+
+				public void setMetricName(String metricName) {
+					this.metricName = metricName;
+				}
+
 			}
 
 		}
 
 		public static class Server {
 
-			/**
-			 * Whether requests handled by Spring MVC, WebFlux or Jersey should be
-			 * automatically timed. If the number of time series emitted grows too large
-			 * on account of request mapping timings, disable this and use 'Timed' on a
-			 * per request mapping basis as needed.
-			 */
-			private boolean autoTimeRequests = true;
-
-			/**
-			 * Name of the metric for received requests.
-			 */
-			private String requestsMetricName = "http.server.requests";
+			private final ServerRequest request = new ServerRequest();
 
 			/**
 			 * Maximum number of unique URI tag values allowed. After the max number of
@@ -145,20 +157,8 @@ public class MetricsProperties {
 			 */
 			private int maxUriTags = 100;
 
-			public boolean isAutoTimeRequests() {
-				return this.autoTimeRequests;
-			}
-
-			public void setAutoTimeRequests(boolean autoTimeRequests) {
-				this.autoTimeRequests = autoTimeRequests;
-			}
-
-			public String getRequestsMetricName() {
-				return this.requestsMetricName;
-			}
-
-			public void setRequestsMetricName(String requestsMetricName) {
-				this.requestsMetricName = requestsMetricName;
+			public ServerRequest getRequest() {
+				return this.request;
 			}
 
 			public int getMaxUriTags() {
@@ -167,6 +167,46 @@ public class MetricsProperties {
 
 			public void setMaxUriTags(int maxUriTags) {
 				this.maxUriTags = maxUriTags;
+			}
+
+			public static class ServerRequest {
+
+				/**
+				 * Name of the metric for received requests.
+				 */
+				private String metricName = "http.server.requests";
+
+				/**
+				 * Whether the trailing slash should be ignored when recording metrics.
+				 */
+				private boolean ignoreTrailingSlash = true;
+
+				/**
+				 * Auto-timed request settings.
+				 */
+				@NestedConfigurationProperty
+				private final AutoTimeProperties autotime = new AutoTimeProperties();
+
+				public AutoTimeProperties getAutotime() {
+					return this.autotime;
+				}
+
+				public String getMetricName() {
+					return this.metricName;
+				}
+
+				public void setMetricName(String metricName) {
+					this.metricName = metricName;
+				}
+
+				public boolean isIgnoreTrailingSlash() {
+					return this.ignoreTrailingSlash;
+				}
+
+				public void setIgnoreTrailingSlash(boolean ignoreTrailingSlash) {
+					this.ignoreTrailingSlash = ignoreTrailingSlash;
+				}
+
 			}
 
 		}

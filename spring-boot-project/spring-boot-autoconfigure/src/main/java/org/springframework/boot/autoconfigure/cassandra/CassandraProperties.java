@@ -1,11 +1,11 @@
 /*
- * Copyright 2012-2018 the original author or authors.
+ * Copyright 2012-2020 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *      https://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -22,13 +22,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.datastax.driver.core.ConsistencyLevel;
-import com.datastax.driver.core.ProtocolOptions;
-import com.datastax.driver.core.ProtocolOptions.Compression;
-import com.datastax.driver.core.QueryOptions;
-import com.datastax.driver.core.policies.LoadBalancingPolicy;
-import com.datastax.driver.core.policies.ReconnectionPolicy;
-import com.datastax.driver.core.policies.RetryPolicy;
+import com.datastax.oss.driver.api.core.DefaultConsistencyLevel;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.DeprecatedConfigurationProperty;
@@ -52,20 +46,20 @@ public class CassandraProperties {
 	private String keyspaceName;
 
 	/**
-	 * Name of the Cassandra cluster.
+	 * Name of the Cassandra session.
 	 */
-	private String clusterName;
+	private String sessionName;
 
 	/**
-	 * Cluster node addresses.
+	 * Cluster node addresses in the form 'host:port'.
 	 */
-	private final List<String> contactPoints = new ArrayList<>(
-			Collections.singleton("localhost"));
+	private final List<String> contactPoints = new ArrayList<>(Collections.singleton("127.0.0.1:9042"));
 
 	/**
-	 * Port of the Cassandra server.
+	 * Datacenter that is considered "local". Contact points should be from this
+	 * datacenter.
 	 */
-	private int port = ProtocolOptions.DEFAULT_PORT;
+	private String localDatacenter;
 
 	/**
 	 * Login user of the server.
@@ -83,34 +77,19 @@ public class CassandraProperties {
 	private Compression compression = Compression.NONE;
 
 	/**
-	 * Class name of the load balancing policy. The class must have a default constructor.
-	 */
-	private Class<? extends LoadBalancingPolicy> loadBalancingPolicy;
-
-	/**
 	 * Queries consistency level.
 	 */
-	private ConsistencyLevel consistencyLevel;
+	private DefaultConsistencyLevel consistencyLevel;
 
 	/**
 	 * Queries serial consistency level.
 	 */
-	private ConsistencyLevel serialConsistencyLevel;
+	private DefaultConsistencyLevel serialConsistencyLevel;
 
 	/**
-	 * Queries default fetch size.
+	 * Queries default page size.
 	 */
-	private int fetchSize = QueryOptions.DEFAULT_FETCH_SIZE;
-
-	/**
-	 * Class name of the reconnection policy. The class must have a default constructor.
-	 */
-	private Class<? extends ReconnectionPolicy> reconnectionPolicy;
-
-	/**
-	 * Class name of the retry policy. The class must have a default constructor.
-	 */
-	private Class<? extends RetryPolicy> retryPolicy;
+	private int pageSize = 5000;
 
 	/**
 	 * Socket option: connection time out.
@@ -133,12 +112,6 @@ public class CassandraProperties {
 	private boolean ssl = false;
 
 	/**
-	 * Whether to enable JMX reporting. Default to false as Cassandra JMX reporting is not
-	 * compatible with Dropwizard Metrics.
-	 */
-	private boolean jmxEnabled;
-
-	/**
 	 * Pool configuration.
 	 */
 	private final Pool pool = new Pool();
@@ -151,24 +124,35 @@ public class CassandraProperties {
 		this.keyspaceName = keyspaceName;
 	}
 
-	public String getClusterName() {
-		return this.clusterName;
+	public String getSessionName() {
+		return this.sessionName;
 	}
 
+	public void setSessionName(String sessionName) {
+		this.sessionName = sessionName;
+	}
+
+	@Deprecated
+	@DeprecatedConfigurationProperty(replacement = "spring.data.cassandra.session-name")
+	public String getClusterName() {
+		return getSessionName();
+	}
+
+	@Deprecated
 	public void setClusterName(String clusterName) {
-		this.clusterName = clusterName;
+		setSessionName(clusterName);
 	}
 
 	public List<String> getContactPoints() {
 		return this.contactPoints;
 	}
 
-	public int getPort() {
-		return this.port;
+	public String getLocalDatacenter() {
+		return this.localDatacenter;
 	}
 
-	public void setPort(int port) {
-		this.port = port;
+	public void setLocalDatacenter(String localDatacenter) {
+		this.localDatacenter = localDatacenter;
 	}
 
 	public String getUsername() {
@@ -195,63 +179,39 @@ public class CassandraProperties {
 		this.compression = compression;
 	}
 
-	@DeprecatedConfigurationProperty(reason = "Implement a ClusterBuilderCustomizer bean instead.")
-	@Deprecated
-	public Class<? extends LoadBalancingPolicy> getLoadBalancingPolicy() {
-		return this.loadBalancingPolicy;
-	}
-
-	@Deprecated
-	public void setLoadBalancingPolicy(
-			Class<? extends LoadBalancingPolicy> loadBalancingPolicy) {
-		this.loadBalancingPolicy = loadBalancingPolicy;
-	}
-
-	public ConsistencyLevel getConsistencyLevel() {
+	public DefaultConsistencyLevel getConsistencyLevel() {
 		return this.consistencyLevel;
 	}
 
-	public void setConsistencyLevel(ConsistencyLevel consistency) {
+	public void setConsistencyLevel(DefaultConsistencyLevel consistency) {
 		this.consistencyLevel = consistency;
 	}
 
-	public ConsistencyLevel getSerialConsistencyLevel() {
+	public DefaultConsistencyLevel getSerialConsistencyLevel() {
 		return this.serialConsistencyLevel;
 	}
 
-	public void setSerialConsistencyLevel(ConsistencyLevel serialConsistency) {
+	public void setSerialConsistencyLevel(DefaultConsistencyLevel serialConsistency) {
 		this.serialConsistencyLevel = serialConsistency;
 	}
 
+	public int getPageSize() {
+		return this.pageSize;
+	}
+
+	public void setPageSize(int pageSize) {
+		this.pageSize = pageSize;
+	}
+
+	@Deprecated
+	@DeprecatedConfigurationProperty(replacement = "spring.data.cassandra.page-size")
 	public int getFetchSize() {
-		return this.fetchSize;
+		return getPageSize();
 	}
 
+	@Deprecated
 	public void setFetchSize(int fetchSize) {
-		this.fetchSize = fetchSize;
-	}
-
-	@DeprecatedConfigurationProperty(reason = "Implement a ClusterBuilderCustomizer bean instead.")
-	@Deprecated
-	public Class<? extends ReconnectionPolicy> getReconnectionPolicy() {
-		return this.reconnectionPolicy;
-	}
-
-	@Deprecated
-	public void setReconnectionPolicy(
-			Class<? extends ReconnectionPolicy> reconnectionPolicy) {
-		this.reconnectionPolicy = reconnectionPolicy;
-	}
-
-	@DeprecatedConfigurationProperty(reason = "Implement a ClusterBuilderCustomizer bean instead.")
-	@Deprecated
-	public Class<? extends RetryPolicy> getRetryPolicy() {
-		return this.retryPolicy;
-	}
-
-	@Deprecated
-	public void setRetryPolicy(Class<? extends RetryPolicy> retryPolicy) {
-		this.retryPolicy = retryPolicy;
+		setPageSize(fetchSize);
 	}
 
 	public Duration getConnectTimeout() {
@@ -276,14 +236,6 @@ public class CassandraProperties {
 
 	public void setSsl(boolean ssl) {
 		this.ssl = ssl;
-	}
-
-	public boolean isJmxEnabled() {
-		return this.jmxEnabled;
-	}
-
-	public void setJmxEnabled(boolean jmxEnabled) {
-		this.jmxEnabled = jmxEnabled;
 	}
 
 	public String getSchemaAction() {
@@ -311,11 +263,6 @@ public class CassandraProperties {
 		private Duration idleTimeout = Duration.ofSeconds(120);
 
 		/**
-		 * Pool timeout when trying to acquire a connection from a host's pool.
-		 */
-		private Duration poolTimeout = Duration.ofMillis(5000);
-
-		/**
 		 * Heartbeat interval after which a message is sent on an idle connection to make
 		 * sure it's still alive. If a duration suffix is not specified, seconds will be
 		 * used.
@@ -336,14 +283,6 @@ public class CassandraProperties {
 			this.idleTimeout = idleTimeout;
 		}
 
-		public Duration getPoolTimeout() {
-			return this.poolTimeout;
-		}
-
-		public void setPoolTimeout(Duration poolTimeout) {
-			this.poolTimeout = poolTimeout;
-		}
-
 		public Duration getHeartbeatInterval() {
 			return this.heartbeatInterval;
 		}
@@ -359,6 +298,28 @@ public class CassandraProperties {
 		public void setMaxQueueSize(int maxQueueSize) {
 			this.maxQueueSize = maxQueueSize;
 		}
+
+	}
+
+	/**
+	 * Name of the algorithm used to compress protocol frames.
+	 */
+	public enum Compression {
+
+		/**
+		 * Requires 'net.jpountz.lz4:lz4'.
+		 */
+		LZ4,
+
+		/**
+		 * Requires org.xerial.snappy:snappy-java.
+		 */
+		SNAPPY,
+
+		/**
+		 * No compression.
+		 */
+		NONE;
 
 	}
 
